@@ -3,6 +3,7 @@ dotenv.config();
 
 import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from '@aws-sdk/client-sqs';
 import { downloadFromS3 } from './aws.js';
+import { buildRepo } from './built.js';
 
 if(!process.env.AWS_REGION || !process.env.SQS_QUEUE_URL){
     console.error('environment variable is not set.');
@@ -36,6 +37,8 @@ async function pollfromSQS(){
             console.log("recieved job id: ",parsed.id)
 
             await downloadFromS3(`output/${parsed.id}`)
+
+            await buildRepo(parsed.id)
 
             //delete the message from the queue
             await sqsClient.send(
