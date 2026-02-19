@@ -1,4 +1,4 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import fs from 'fs'
 import path from 'path'
 import { pipeline } from "stream/promises";
@@ -49,5 +49,3 @@ export async function downloadFromS3(prefix: string){
     }
     console.log("all files downloaded from s3 for prefix : ", prefix)
 }
-
-// downloadFromS3("output/j9bks")

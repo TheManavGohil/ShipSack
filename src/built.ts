@@ -1,5 +1,6 @@
 import { spawn  } from "child_process";
 import path from "path"
+import fs from "fs"
 
 const __dirname = import.meta.dirname;
 
@@ -7,6 +8,13 @@ export function buildRepo(id : string){
     return new Promise((resolve, reject)=>{
         const repoPath = path.join(__dirname,"output",id)
         console.log("building repo at path : ", repoPath)
+
+        const packagePath = path.join(repoPath, "package.json")
+        if(!fs.existsSync(packagePath)){
+            console.error(`package.json not found for repo :${id}, soo treating as static files and skipping build step`)
+            resolve(true)
+            return
+        }
 
         const spawnOptions = {
             cwd : repoPath,
