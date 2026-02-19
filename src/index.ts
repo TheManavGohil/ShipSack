@@ -32,9 +32,9 @@ app.post('/deploy', async (req,res)=>{
     await git.clone(repoURL, path.join(__dirname,`output/${id}`))
     const files = await getAllFiles(path.join(__dirname,`output/${id}`))
     // console.log(files)
-    files.forEach(async file =>{
+    for(const file of files){
         await uploadFile(file.slice(__dirname.length+1),file)
-    })
+    }
 
     console.log("using table", process.env.DYNAMO_TABLE_NAME);
     await ddb.send(
@@ -68,9 +68,7 @@ app.get('/status/:id', async (req,res)=>{
     const result = await ddb.send(
         new GetCommand({
             TableName : process.env.DYNAMO_TABLE_NAME,
-            Key : {
-                id,
-            },
+            Key : { id },
         })
     )
     res.json({"status": result.Item?.status || "not found"})

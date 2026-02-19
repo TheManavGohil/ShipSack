@@ -20,7 +20,7 @@ const s3 = new S3Client({
   },
 });
 export const uploadFile = async ( fileName: string,localFilePath: string ) => {
-  const fileContent = fs.readFileSync(localFilePath);
+  const fileContent = fs.createReadStream(localFilePath);
 
   const command = new PutObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME,
