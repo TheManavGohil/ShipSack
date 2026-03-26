@@ -1,14 +1,16 @@
 import { DeleteMessageCommand, ReceiveMessageCommand } from "@aws-sdk/client-sqs";
 import path from "path";
+import fs from "fs";
+import { simpleGit } from "simple-git";
 import { sqsClient } from "../aws/clients.js";
 import { env } from "../env.js";
-import { downloadPrefixFromS3 } from "../aws/s3.js";
 import { updateDeploymentStatus } from "../aws/status.js";
-import { buildRepo } from "./buildRepo.js";
 import { uploadFinalOutput } from "./uploadDist.js";
+import { dockerBuildAndExportDist, dockerRemoveImage } from "./dockerBuild.js";
 
 export async function startWorkerLoop(repoRootDir: string) {
   console.log("[worker] starting SQS poll loop");
+  const git = simpleGit();
 
   while (true) {
     try {
@@ -26,19 +28,38 @@ export async function startWorkerLoop(repoRootDir: string) {
 
       for (const msg of messages) {
         const body = msg.Body ?? "{}";
-        const parsed = JSON.parse(body) as { id?: string };
+        const parsed = JSON.parse(body) as { id?: string; repoURL?: string };
         const id = parsed.id;
-        if (!id) continue;
+        const repoURL = parsed.repoURL;
+        if (!id || !repoURL) continue;
 
-        await downloadPrefixFromS3(`output/${id}`, repoRootDir);
+        const jobDir = path.join(repoRootDir, "jobs", id);
+        const repoDir = path.join(jobDir, "repo");
+        const exportDir = path.join(jobDir, "export");
+        const imageTag = `vercelclone-build:${id}`;
+
+        fs.mkdirSync(jobDir, { recursive: true });
+
+        await updateDeploymentStatus(id, "cloning");
+        await git.clone(repoURL, repoDir);
 
         await updateDeploymentStatus(id, "building");
-        await buildRepo(repoRootDir, id);
+        const packageJsonPath = path.join(repoDir, "package.json");
+        if (fs.existsSync(packageJsonPath)) {
+          await dockerBuildAndExportDist({ repoDir, outDir: exportDir, imageTag });
+        }
 
         await updateDeploymentStatus(id, "deploying");
         await uploadFinalOutput(repoRootDir, id);
 
         await updateDeploymentStatus(id, "deployed");
+
+        await dockerRemoveImage(imageTag);
+        try {
+          fs.rmSync(jobDir, { recursive: true, force: true });
+        } catch {
+          // ignore
+        }
 
         if (msg.ReceiptHandle) {
           await sqsClient.send(

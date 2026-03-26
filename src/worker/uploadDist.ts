@@ -19,10 +19,10 @@ function getAllFiles(folderPath: string): string[] {
 }
 
 export async function uploadFinalOutput(repoRootDir: string, id: string) {
-  const repoPath = path.join(repoRootDir, "output", id);
-  const distPath = path.join(repoPath, "dist");
+  const distPath = path.join(repoRootDir, "jobs", id, "export", "dist");
+  const staticPath = path.join(repoRootDir, "jobs", id, "repo");
 
-  const folderToUpload = fs.existsSync(distPath) ? distPath : repoPath;
+  const folderToUpload = fs.existsSync(distPath) ? distPath : staticPath;
   const allFiles = getAllFiles(folderToUpload);
 
   for (const file of allFiles) {
