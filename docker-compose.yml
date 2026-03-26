@@ -1,0 +1,15 @@
+services:
+  code-along-server:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env
+    volumes:
+      # Persist per-deploy working dirs on host
+      - ./jobs:/app/jobs
+      # Allow container to run `docker build` using host Docker Desktop
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
