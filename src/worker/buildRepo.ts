@@ -2,10 +2,9 @@ import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
 
-export function buildRepo(repoRootDir: string, id: string) {
+export function buildRepoLocally(repoDir: string, outDir: string) {
   return new Promise<boolean>((resolve, reject) => {
-    const repoPath = path.join(repoRootDir, "output", id);
-    const packagePath = path.join(repoPath, "package.json");
+    const packagePath = path.join(repoDir, "package.json");
 
     if (!fs.existsSync(packagePath)) {
       resolve(true);
@@ -13,7 +12,7 @@ export function buildRepo(repoRootDir: string, id: string) {
     }
 
     const spawnOptions = {
-      cwd: repoPath,
+      cwd: repoDir,
       stdio: "inherit" as const,
       shell: true,
     };
@@ -25,6 +24,11 @@ export function buildRepo(repoRootDir: string, id: string) {
       const build = spawn("npm", ["run", "build"], spawnOptions);
       build.on("close", (buildCode: number | null) => {
         if (buildCode !== 0) return reject(new Error("npm run build failed"));
+        const repoDist = path.join(repoDir, "dist");
+        if (fs.existsSync(repoDist)) {
+          fs.mkdirSync(path.join(outDir, "dist"), { recursive: true });
+          fs.cpSync(repoDist, path.join(outDir, "dist"), { recursive: true });
+        }
         resolve(true);
       });
     });

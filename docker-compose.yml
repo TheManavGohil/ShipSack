@@ -9,6 +9,8 @@ services:
     volumes:
       # Persist per-deploy working dirs on host
       - ./jobs:/app/jobs
+      - ./dist-sites:/app/dist-sites
+      - ./output-sites:/app/output-sites
       # Allow container to run `docker build` using host Docker Desktop
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped

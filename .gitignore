@@ -23,6 +23,9 @@ coverage/
 
 # Runtime working directories (deploy pipeline)
 output/
+dist-sites/
+output-sites/
+jobs/
 
 # Logs
 logs/
